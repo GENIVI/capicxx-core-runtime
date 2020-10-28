@@ -99,7 +99,7 @@ ENDIF(USE_CONSOLE)
 
 IF(MSVC)
     message("using MSVC Compiler")
-    add_definitions(-DCOMMONAPI_INTERNAL_COMPILATION -DCOMMONAPI_DLL_COMPILATION)
+    add_definitions(-DCOMMONAPI_INTERNAL_COMPILATION)
     add_compile_options(/EHsc /wd4996)
 ELSE ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wformat -Wformat-security -Wconversion -fexceptions -fstrict-aliasing -fstack-protector -fasynchronous-unwind-tables -fno-omit-frame-pointer -Werror -DCOMMONAPI_INTERNAL_COMPILATION -fvisibility=hidden")
@@ -116,7 +116,6 @@ ENDIF(DLT_FOUND)
 ##############################################################################
 
 include_directories(
-    include
     ${DLT_INCLUDE_DIRS}
 )
 
@@ -126,7 +125,13 @@ link_directories(
 
 file(GLOB CAPI_SRCS "src/CommonAPI/*.cpp")
 list(SORT CAPI_SRCS)
-add_library(CommonAPI SHARED ${CAPI_SRCS})
+if (BUILD_SHARED_LIBS)
+    add_library(CommonAPI SHARED ${CAPI_SRCS})
+    add_definitions(-DCOMMONAPI_DLL_COMPILATION)
+else()
+    add_library(CommonAPI STATIC ${CAPI_SRCS})
+endif()
+target_include_directories(CommonAPI PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>)
 target_link_libraries(CommonAPI PRIVATE ${DL_LIBRARY} ${DLT_LIBRARIES})
 set_target_properties(CommonAPI PROPERTIES VERSION ${LIBCOMMONAPI_MAJOR_VERSION}.${LIBCOMMONAPI_MINOR_VERSION}.${LIBCOMMONAPI_PATCH_VERSION} SOVERSION ${LIBCOMMONAPI_MAJOR_VERSION}.${LIBCOMMONAPI_MINOR_VERSION}.${LIBCOMMONAPI_PATCH_VERSION} LINKER_LANGUAGE C)
 set_target_properties (CommonAPI PROPERTIES INTERFACE_LINK_LIBRARY "")
